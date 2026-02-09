@@ -4,8 +4,6 @@
 This project implements a **single-cycle RISC-V CPU** in Verilog/SystemVerilog.  
 The design follows a classic single-cycle datapath and can execute a **basic subset of RV32I instructions**.
 
-> ⚠️ Note: Instructions like `addi`, `jal`, `jalr`, etc. are **not implemented yet**.
-
 ---
 
 ## ✅ Implemented Features
