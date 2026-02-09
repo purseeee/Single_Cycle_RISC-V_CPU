@@ -1,0 +1,33 @@
+
+---
+
+### `.gitignore`
+
+```gitignore
+# Simulation outputs
+*.vcd
+*.fst
+*.out
+*.log
+
+# Icarus / Verilator / ModelSim junk
+a.out
+sim.out
+work/
+transcript
+vsim.wlf
+
+# Build directories
+build/
+sim/
+obj_dir/
+
+# Editor / IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS junk
+.DS_Store
+Thumbs.db
