@@ -1,0 +1,12 @@
+module programCounter #(
+	parameter WIDTH = 32
+)(
+  input  logic clk,
+  input  logic [WIDTH-1:0]PCNext,
+  output logic [WIDTH-1:0]PC
+);
+  
+  always_ff@(posedge clk) begin
+    PC <= PCNext;
+  end
+endmodule

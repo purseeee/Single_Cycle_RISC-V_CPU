@@ -1,0 +1,80 @@
+module dataMemory_tb;
+
+  parameter WIDTH = 32;
+  parameter DEPTH = 1024;
+
+  logic             clk;
+  logic             we;
+  logic [WIDTH-1:0] addr;  // BYTE address
+  logic [WIDTH-1:0] wd;
+  logic [WIDTH-1:0] rd;
+
+  // Shadow memory
+  logic [WIDTH-1:0] shadow_dataMem [0:DEPTH-1];
+
+  localparam ADDR_BITS = $clog2(DEPTH);
+  logic [ADDR_BITS-1:0] word_addr;
+
+  dataMemory #(.WIDTH(WIDTH), .DEPTH(DEPTH)) uut (.*);
+
+  always #5 clk = ~clk;
+
+  initial begin
+    $display("TB started");
+    clk = 0; we = 0; addr = 0; wd = 0;
+
+    // Clear shadow memory
+    for (int i = 0; i < DEPTH; i++) shadow_dataMem[i] = '0;
+
+    $display("Starting Full Write Phase...");
+
+    // --- WRITE LOOP ---
+    for (int i = 0; i < DEPTH; i++) begin
+      @(posedge clk);
+      #1; 
+      
+      we = 1;
+      word_addr = i;         // Sequential address (0, 1, 2... 1023)
+      addr = word_addr << 2;
+      
+      wd = $urandom();
+      if (wd == 0) wd = 32'h1; // Optional: Avoid 0 to make debug easier
+
+      // Update shadow
+      shadow_dataMem[word_addr] = wd;
+    end
+    
+    
+    
+    // Reset signals cleanly
+    @(posedge clk);
+    #1;
+    we = 0;
+
+    $display("Starting Self-Checking Read Phase...");
+
+    // --- READ LOOP ---
+    for (int i = 0; i < 500; i++) begin
+      // 1. Drive Address
+      @(posedge clk);
+      #1; // Delay drive
+      word_addr = i % DEPTH;
+      addr = word_addr << 2;
+
+      // 2. Wait for RAM latency (1 cycle for Sync Read)
+      @(posedge clk);
+      
+      // 3. Sample Output
+      #1; // <--- CRITICAL FIX 2: Check output slightly after edge
+      
+      if (rd !== shadow_dataMem[word_addr]) begin
+        $error("Mismatch at addr %0d! HW: %h, Expected: %h",
+               word_addr, rd, shadow_dataMem[word_addr]);
+      end
+    end
+
+    $display("Simulation Finished. If no errors shown above, you passed!");
+    $finish;
+  end
+
+endmodule
