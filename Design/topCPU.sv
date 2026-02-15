@@ -28,7 +28,9 @@ module top_module(
     logic [31:0] instr;
 
     // Decoder Signals
-    logic        branch, resultSrc, memWrite, aluSrc, regWrite;
+    logic        branch, memWrite, aluSrc, regWrite;
+    logic        jump, jalr;       // <--- NEW: Control signals for Jumps
+    logic [1:0]  resultSrc;        // <--- UPDATED: Changed to 2 bits
     logic [1:0]  aluOp, immSrc;
     logic [2:0]  aluControl;
 
@@ -57,11 +59,21 @@ module top_module(
     
     // PC + 4 Adder
     assign PCPlus4 = PC + 32'd4;
+    assign PCTarget = PC + immExt; // Branch/JAL Target
 
-    // PC Mux Logic (Branch vs Next Sequential)
-    // PCSrc is high if it's a Branch op AND the ALU Zero flag is set (beq)
-    assign PCSrc = branch & zero;
-    assign PCNext = (PCSrc) ? PCTarget : PCPlus4;
+    // PC Mux Logic (Updated for JALR)
+    // Priority: 
+    // 1. JALR -> Jump to ALUResult (masked)
+    // 2. Branch/JAL -> Jump to PCTarget
+    // 3. Normal -> PC+4
+    always_comb begin
+        if (jalr) 
+            PCNext = aluResult & 32'hFFFFFFFE; // Clear LSB for JALR compliance
+        else if ((branch & zero) | jump)
+            PCNext = PCTarget;
+        else
+            PCNext = PCPlus4;
+    end
 
     // Program Counter Instance
     // Note: Your PC module lacks a reset. Using an initial block to fix start state for sim.
@@ -92,12 +104,14 @@ module top_module(
         .opcode(instr[6:0]),
         .zero(zero),         // Fed back from ALU
         .branch(branch),
-        .resultSrc(resultSrc),
+        .resultSrc(resultSrc), // 2 bits
         .memWrite(memWrite),
         .aluOp(aluOp),
         .aluSrc(aluSrc),
         .immSrc(immSrc),
-        .regWrite(regWrite)
+        .regWrite(regWrite),
+        .jump(jump),           // <--- Connected
+        .jalr(jalr)            // <--- Connected
     );
 
     // Register File
@@ -145,9 +159,6 @@ module top_module(
         .zero(zero)
     );
 
-    // PC Target Adder (for Branches)
-    assign PCTarget = PC + immExt;
-
     // -------------------------------------------------------------------------
     // 4. Memory Stage (Data Memory)
     // -------------------------------------------------------------------------
@@ -164,9 +175,18 @@ module top_module(
     // 5. Writeback Stage
     // -------------------------------------------------------------------------
 
-    // Result Mux
-    // If ResultSrc is 1, write from Memory (Load). If 0, write from ALU.
-    assign wd3 = (resultSrc) ? readData : aluResult;
+    // Result Mux (Updated for JAL/JALR support)
+    // 00: ALU Result (R-type, I-type)
+    // 01: Memory Data (lw)
+    // 10: PC+4 (jal, jalr linking)
+    always_comb begin
+        case (resultSrc)
+            2'b00: wd3 = aluResult;
+            2'b01: wd3 = readData;
+            2'b10: wd3 = PCPlus4;
+            default: wd3 = 32'b0;
+        endcase
+    end
 
     // Output for Testbench/Debugging
     assign test_result = wd3;
