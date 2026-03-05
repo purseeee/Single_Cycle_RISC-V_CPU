@@ -5,7 +5,7 @@ The design follows a classic single-cycle datapath and has been extended to supp
 
 ---
 
-## ✅ Implemented Features
+## Implemented Features
 
 - **Core Architecture:**
   - 32-bit RISC-V Datapath
@@ -27,7 +27,7 @@ The design follows a classic single-cycle datapath and has been extended to supp
 
 ---
 
-## 🚀 Verification & Tests
+## Verification & Tests
 
 The CPU has been verified with complex algorithmic tests:
 
@@ -43,7 +43,7 @@ The CPU has been verified with complex algorithmic tests:
 
 ---
 
-## 🧠 Architecture Details
+## Architecture Details
 
 - **Control Path:**
   - **Main Decoder:** Generates control signals including `jump`, `jalr`, and 2-bit `resultSrc`.
@@ -55,7 +55,7 @@ The CPU has been verified with complex algorithmic tests:
 
 ---
 
-## 🛠️ How to Simulate
+## How to Simulate
 
 The project includes a top-level testbench (`cpu_tb.sv`) pre-configured to run the Recursive Fibonacci program.
 
